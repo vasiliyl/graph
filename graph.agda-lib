@@ -1,0 +1,6 @@
+name: graph
+depend:
+  standard-library
+  finite
+include:
+  src
