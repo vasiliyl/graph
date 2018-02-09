@@ -9,10 +9,10 @@ open import Data.Nat.Properties
 open import Data.Product
 open import Data.Vec hiding (_∷ʳ_)
 open import Finite
+open import Finite.Pigeonhole
 open import Function
 open import Induction.Nat
 open import Graph.Cut.Vec
-open import Pigeonhole
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 

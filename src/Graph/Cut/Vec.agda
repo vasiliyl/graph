@@ -6,8 +6,8 @@ open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Product as ×
 open import Data.Vec
+open import Finite.Pigeonhole
 open import Function
-open import Pigeonhole
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
 open ≡-Reasoning
