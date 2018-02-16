@@ -12,14 +12,19 @@ open import Relation.Nullary
 
 open IsFinite
 
+record IsFiniteGraph {V} (E : V → V → Set) : Set where
+  field
+    vertexFinite : IsFinite V
+    decEqVertex : (a b : V) → Dec (a ≡ b)
+    edgeFinite : ∀ a → IsFinite (∃ (E a))
+
 record FiniteGraph : Set  where
-  constructor finiteGraph
   field
     {Vertex} : Set
     {Edge} : Vertex → Vertex → Set
-    vertexFinite : IsFinite Vertex
-    decEqVertex : (a b : Vertex) → Dec (a ≡ b)
-    edgeFinite : ∀ a → IsFinite (∃ (Edge a))
+    isFiniteGraph : IsFiniteGraph Edge
+
+  open IsFiniteGraph isFiniteGraph public
 
   infix 2 _⇒_
   _⇒_ = Edge

@@ -15,11 +15,25 @@ open import Relation.Nullary
 open FiniteGraph g
 open IsFinite
 
+∃Pathˡ? : ∀ {P : Vertex → Set}
+  a → (∀ x → Dec (P x)) → Dec (∃ λ b → ∃ (Pathˡ a b) × P b)
+∃Pathˡ? a P? =
+  case ∃? (Pathˡ≤-finite (size vertexFinite) a) (P? ∘ proj₁) of λ where
+    (yes ((_ , (_ , _ , p)) , pb)) → yes (, (, p) , pb)
+    (no ¬p) → no λ where (_ , (_ , p) , pb) → ¬p ((, shortEnoughPath p) , pb)
+
 Pathˡ? : ∀ a b → Dec (∃ (Pathˡ a b))
 Pathˡ? a b =
-  case ∃? (Pathˡ≤-finite (size vertexFinite) a) (decEqVertex b ∘ proj₁) of λ where
-    (yes ((_ , m , le , p) , refl)) → yes (, p)
-    (no ¬p) → no λ where (n , p) → ¬p ((, shortEnoughPath p) , refl)
+  case ∃Pathˡ? a (decEqVertex b) of λ where
+    (yes (_ , p , refl)) → yes (, proj₂ p)
+    (no ¬p) → no λ p → ¬p (, p , refl)
+
+∃Pathʳ? : ∀ {P : Vertex → Set}
+  a → (∀ x → Dec (P x)) → Dec (∃ λ b → ∃ (Pathʳ a b) × P b)
+∃Pathʳ? a P? =
+  case ∃Pathˡ? a P? of λ where
+    (yes (_ , (_ , p) , pb)) → yes (, (, reversePathˡ p) , pb)
+    (no ¬p) → no λ where (b , (_ , p) , pb) → ¬p (, (, reversePathʳ p) , pb)
 
 Pathʳ? : ∀ a b → Dec (∃ (Pathʳ a b))
 Pathʳ? a b =
