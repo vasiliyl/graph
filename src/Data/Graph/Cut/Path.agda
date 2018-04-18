@@ -1,8 +1,6 @@
-{-# OPTIONS --type-in-type #-}
-
 open import Data.Graph
 
-module Data.Graph.Cut.Path (g : FiniteGraph) where
+module Data.Graph.Cut.Path {ℓᵥ ℓₑ} (g : FiniteGraph ℓᵥ ℓₑ) where
 
 open import Data.Graph.Cut.Vec
 open import Data.Nat
@@ -21,9 +19,9 @@ open IsFinite
 open ≡-Reasoning
 
 breakPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
+  (p : SizedPathˡ a b l)
   (e : x ∈ trailˡ p) →
-  Pathˡ a x (prefixLength e) × Pathˡ x b (suc (suffixLength e))
+  SizedPathˡ a x (prefixLength e) × SizedPathˡ x b (suc (suffixLength e))
 breakPath [] ()
 breakPath (e ∷ p) here = [] , e ∷ p
 breakPath (e ∷ p) (there d) =
@@ -31,19 +29,19 @@ breakPath (e ∷ p) (there d) =
     e ∷ q , r
 
 prefixPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
+  (p : SizedPathˡ a b l)
   (e : x ∈ trailˡ p) →
-  Pathˡ a x _
+  SizedPathˡ a x _
 prefixPath p = proj₁ ∘ breakPath p
 
 suffixPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
+  (p : SizedPathˡ a b l)
   (e : x ∈ trailˡ p) →
-  Pathˡ x b _
+  SizedPathˡ x b _
 suffixPath p = proj₂ ∘ breakPath p
 
 suffixLength≡suffixLength-tail : ∀ {a b x n}
-  (p : Pathˡ a b n)
+  (p : SizedPathˡ a b n)
   (e : x ∈ trailˡ p)
   (e′ : x ∈ tail (suffix e)) →
   suffixLength e′ ≡ suffixLength {xs = suffix e} (tail-⊆ e′)
@@ -52,7 +50,7 @@ suffixLength≡suffixLength-tail (e ∷ p) here e′ = refl
 suffixLength≡suffixLength-tail (e ∷ p) (there i) e′ = suffixLength≡suffixLength-tail p i e′
 
 suffix≡suffixPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
+  (p : SizedPathˡ a b l)
   (e : x ∈ trailˡ p) →
   suffix e ≡ trailˡ (suffixPath p e)
 suffix≡suffixPath [] ()
@@ -60,21 +58,21 @@ suffix≡suffixPath (e ∷ p) here = refl
 suffix≡suffixPath (e ∷ p) (there i) = suffix≡suffixPath p i
 
 segmentPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
+  (p : SizedPathˡ a b l)
   (e : x ∈ trailˡ p)
   (e′ : x ∈ tail (suffix e)) →
-  Pathˡ a x (prefixLength e) × Pathˡ x x (suc (prefixLength e′)) × Pathˡ x b (suc (suffixLength e′))
+  SizedPathˡ a x (prefixLength e) × SizedPathˡ x x (suc (prefixLength e′)) × SizedPathˡ x b (suc (suffixLength e′))
 segmentPath p e e′ =
   let
     u , v = breakPath p e
     u′ , v′ = breakPath v (subst (_ ∈_) (suffix≡suffixPath p e) (tail-⊆ e′))
   in
     u ,
-    subst (Pathˡ _ _) (prefixLengthLem p _ _) u′ ,
-    subst (Pathˡ _ _) (cong suc (suffixLengthLem p _ _)) v′
+    subst (SizedPathˡ _ _) (prefixLengthLem p _ _) u′ ,
+    subst (SizedPathˡ _ _) (cong suc (suffixLengthLem p _ _)) v′
   where
     prefixLengthLem : ∀ {a b x l}
-      (p : Pathˡ a b l)
+      (p : SizedPathˡ a b l)
       (e : x ∈ trailˡ p)
       (e′ : x ∈ tail (suffix e)) →
       prefixLength (subst (_ ∈_) (suffix≡suffixPath p e) (tail-⊆ e′)) ≡ suc (prefixLength e′)
@@ -83,7 +81,7 @@ segmentPath p e e′ =
     prefixLengthLem (e ∷ p) (there i) e′ = prefixLengthLem p i e′
 
     suffixLengthLem : ∀ {a b x l}
-      (p : Pathˡ a b l)
+      (p : SizedPathˡ a b l)
       (e : x ∈ trailˡ p)
       (e′ : x ∈ tail (suffix e)) →
       suffixLength (subst (_ ∈_) (suffix≡suffixPath p e) (tail-⊆ e′)) ≡ suffixLength e′
@@ -92,7 +90,7 @@ segmentPath p e e′ =
     suffixLengthLem (e ∷ p) (there i) e′′ = suffixLengthLem p i e′′
 
 cutPathLoop : ∀ {a b x n}
-  (p : Pathˡ a b n)
+  (p : SizedPathˡ a b n)
   (e : x ∈ trailˡ p)
   (e′ : x ∈ tail (suffix e)) →
   Pathˡ< a b n
@@ -118,7 +116,7 @@ cutPathLoop {n = n} p e e′ = let u , v , w = segmentPath p e e′ in , lt , u 
       (s≤s (+-mono-≤ (≤-refl {x = prefixLength e + suffixLength e′}) (0<prefixLength-tail e e′)))
 
 shortenPath : ∀ {a b n} →
-  Pathˡ a b n →
+  SizedPathˡ a b n →
   n > size vertexFinite →
   Pathˡ< a b n
 shortenPath p gt =
@@ -126,7 +124,7 @@ shortenPath p gt =
     (proj₂ (repeatElems (finitePigeonhole vertexFinite (trailˡ p) gt)))
 
 shortEnoughPath : ∀ {a b n}
-  (p : Pathˡ a b n) →
+  (p : SizedPathˡ a b n) →
   Pathˡ≤ a b (size vertexFinite)
 shortEnoughPath {n = n} p =
   case size vertexFinite <? n of λ where

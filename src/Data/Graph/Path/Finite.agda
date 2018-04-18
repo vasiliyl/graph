@@ -1,8 +1,6 @@
-{-# OPTIONS --type-in-type #-}
-
 open import Data.Graph
 
-module Data.Graph.Path.Finite (g : FiniteGraph) where
+module Data.Graph.Path.Finite {ℓᵥ ℓₑ} (g : FiniteGraph ℓᵥ ℓₑ) where
 
 open import Category.Monad
 open import Data.Graph.Cut.Path g
@@ -16,6 +14,7 @@ open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Product as ×
 open import Data.Sum as ⊎
+import Level as ℓ
 open import Finite
 open import Function
 open import Function.Equality using (Π)
@@ -29,43 +28,43 @@ open Equivalence using (to; from)
 open FiniteGraph g
 open Inverse using (to; from)
 open IsFinite
-open RawMonad ListCat.monad
+open RawMonad {ℓᵥ ℓ.⊔ ℓₑ} ListCat.monad
 
-nexts : ∀ {a b n} → Pathʳ a b n → List (∃ λ b → Pathʳ a b (suc n))
-nexts {a} {b} p = List.map (λ where (_ , e) → , p ∷ e) (elements (edgeFinite b))
+nexts : ∀ {a b n} → SizedPathʳ a b n → List (∃ λ b → SizedPathʳ a b (suc n))
+nexts {a} {b} p = List.map (λ where (_ , e) → , e ∷ p) (elements (edgeFinite b))
 
 ∈-nexts : ∀ {a c n} →
-  (pf : IsFinite (∃ λ b → Pathʳ a b n)) →
-  (p : Pathʳ a c (suc n)) →
+  (pf : IsFinite (∃ λ b → SizedPathʳ a b n)) →
+  (p : SizedPathʳ a c (suc n)) →
   (c , p) ∈ (elements pf >>= (nexts ∘ proj₂))
-∈-nexts pf (p ∷ e) =
-  to >>=-∈↔ ⟨$⟩ (, membership pf (, p) , to map-∈↔ ⟨$⟩ (, membership (edgeFinite _) (, e) , refl))
+∈-nexts pf (e ∷ p) =
+  to {ℓᵥ ℓ.⊔ ℓₑ} >>=-∈↔ ⟨$⟩
+    (, membership pf (, p) , to map-∈↔ ⟨$⟩ (, membership (edgeFinite _) (, e) , refl))
 
-Pathʳ-finite : ∀ n a → IsFinite (∃ λ b → Pathʳ a b n)
-Pathʳ-finite zero a = finite List.[ , [] ] λ where (_ , []) → here refl
-Pathʳ-finite (suc n) a =
-  let pf = Pathʳ-finite n a in
+SizedPathʳ-finite : ∀ n a → IsFinite (∃ λ b → SizedPathʳ a b n)
+SizedPathʳ-finite zero a = finite List.[ , [] ] λ where (_ , []) → here refl
+SizedPathʳ-finite (suc n) a =
+  let pf = SizedPathʳ-finite n a in
     finite (elements pf >>= (nexts ∘ proj₂)) (∈-nexts pf ∘ proj₂)
 
-
-id≗reversePathʳ∘reversePathˡ : ∀ {a b n} → id ≗ reversePathʳ {a} {b} {n} ∘ reversePathˡ
-id≗reversePathʳ∘reversePathˡ [] = refl
-id≗reversePathʳ∘reversePathˡ (e ∷ p) =
+id≗flipSizedPathʳ∘flipSizedPathˡ : ∀ {a b n} → id ≗ flipSizedPathʳ {a} {b} {n} ∘ flipSizedPathˡ
+id≗flipSizedPathʳ∘flipSizedPathˡ [] = refl
+id≗flipSizedPathʳ∘flipSizedPathˡ (e ∷ p) =
   trans
-    (cong (e ∷_) (id≗reversePathʳ∘reversePathˡ p))
-    (step e (reversePathˡ p))
+    (cong (e ∷_) (id≗flipSizedPathʳ∘flipSizedPathˡ p))
+    (step e (flipSizedPathˡ p))
   where
-    step : ∀ {a b c n} (e : a ⇒ b) (p : Pathʳ b c n) → e ∷ reversePathʳ p ≡ reversePathʳ (e ∷ˡ p)
+    step : ∀ {a b c n} (e : Edge a b) (p : SizedPathʳ b c n) → e ∷ flipSizedPathʳ p ≡ flipSizedPathʳ (e ∷ˡ p)
     step e [] = refl
-    step e (p ∷ e′) = cong (_∷ʳ e′) (step e p)
+    step e (e′ ∷ p) = cong (_∷ʳ e′) (step e p)
 
-Pathˡ-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ a b n)
-elements (Pathˡ-finite n a) = List.map (×.map id reversePathʳ) (elements (Pathʳ-finite n a))
-membership (Pathˡ-finite n a) (b , p) =
+SizedPathˡ-finite : ∀ n a → IsFinite (∃ λ b → SizedPathˡ a b n)
+elements (SizedPathˡ-finite n a) = List.map (×.map id flipSizedPathʳ) (elements (SizedPathʳ-finite n a))
+membership (SizedPathˡ-finite n a) (b , p) =
   to map-∈↔ ⟨$⟩
-    ((b , reversePathˡ p) ,
-    membership (Pathʳ-finite n a) _ ,
-    cong (_,_ b) (id≗reversePathʳ∘reversePathˡ p))
+    ((b , flipSizedPathˡ p) ,
+    membership (SizedPathʳ-finite n a) _ ,
+    cong (_,_ b) (id≗flipSizedPathʳ∘flipSizedPathˡ p))
 
 ≤-top? : ∀ {x y} → x ≤ suc y → x ≤ y ⊎ x ≡ suc y
 ≤-top? z≤n = inj₁ z≤n
@@ -75,15 +74,15 @@ membership (Pathˡ-finite n a) (b , p) =
     (inj₁ le) → inj₁ (s≤s le)
     (inj₂ refl) → inj₂ refl
 
-Pathˡ≤-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ≤ a b n)
-Pathˡ≤-finite zero a = finite List.[ , , z≤n , [] ] λ where (_ , _ , z≤n , []) → here refl
-Pathˡ≤-finite (suc n) a =
+SizedPathˡ≤-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ≤ a b n)
+SizedPathˡ≤-finite zero a = finite List.[ , , z≤n , [] ] λ where (_ , _ , z≤n , []) → here refl
+SizedPathˡ≤-finite (suc n) a =
   let
-    finite xs elem = Pathˡ≤-finite n a
-    finite xs′ elem′ = Pathˡ-finite (suc n) a
+    finite xs elem = SizedPathˡ≤-finite n a
+    finite xs′ elem′ = SizedPathˡ-finite (suc n) a
   in
     finite
-      (List.map (×.map _ (×.map _ (×.map ≤-step id))) xs List.++
+      (List.map (×.map _ (×.map _ (×.map ≤-step id))) xs ++
         List.map (×.map id (_,_ (suc n) ∘ _,_ ≤-refl)) xs′)
       λ where
         (b , m , le , p) → case ≤-top? le of λ where
