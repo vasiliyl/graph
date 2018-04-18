@@ -1,10 +1,11 @@
 {-# OPTIONS --type-in-type #-}
 
-open import Graph
+open import Data.Graph
 
-module Graph.Path.Finite (g : FiniteGraph) where
+module Data.Graph.Path.Finite (g : FiniteGraph) where
 
 open import Category.Monad
+open import Data.Graph.Cut.Path g
 open import Data.List as List hiding (_∷ʳ_)
 open import Data.List.Any as Any
 open import Data.List.Any.Membership.Propositional
@@ -20,7 +21,6 @@ open import Function
 open import Function.Equality using (Π)
 open import Function.Equivalence using (Equivalence)
 open import Function.Inverse using (Inverse)
-open import Graph.Cut.Path g
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 

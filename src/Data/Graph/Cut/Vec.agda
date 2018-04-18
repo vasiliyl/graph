@@ -1,6 +1,6 @@
 {-# OPTIONS --type-in-type #-}
 
-module Graph.Cut.Vec where
+module Data.Graph.Cut.Vec where
 
 open import Data.Nat
 open import Data.Nat.Properties

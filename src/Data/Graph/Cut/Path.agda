@@ -1,9 +1,10 @@
 {-# OPTIONS --type-in-type #-}
 
-open import Graph
+open import Data.Graph
 
-module Graph.Cut.Path (g : FiniteGraph) where
+module Data.Graph.Cut.Path (g : FiniteGraph) where
 
+open import Data.Graph.Cut.Vec
 open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Product
@@ -12,7 +13,6 @@ open import Finite
 open import Finite.Pigeonhole
 open import Function
 open import Induction.Nat
-open import Graph.Cut.Vec
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 
