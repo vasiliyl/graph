@@ -6,9 +6,9 @@ open import Category.Monad
 open import Data.Graph.Cut.Path g
 open import Data.List as List hiding (_∷ʳ_)
 open import Data.List.Any as Any
-open import Data.List.Any.Membership.Propositional
-open import Data.List.Any.Membership.Propositional.Properties hiding (finite)
 open import Data.List.Any.Properties
+open import Data.List.Membership.Propositional
+open import Data.List.Membership.Propositional.Properties hiding (finite)
 open import Data.List.Categorical as ListCat
 open import Data.Nat
 open import Data.Nat.Properties
