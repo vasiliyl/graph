@@ -6,6 +6,7 @@ open import Data.Graph.Cut.Path g
 open import Data.Graph.Path.Finite g
 open import Data.Product
 open import Finite
+open import Finite.Pigeonhole
 open import Function
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
@@ -13,12 +14,25 @@ open import Relation.Nullary
 open FiniteGraph g
 open IsFinite
 
+¬-dec : ∀ {ℓ} {A : Set ℓ} → Dec A → Dec (¬ A)
+¬-dec (yes p) = no λ ¬p → ¬p p
+¬-dec (no ¬p) = yes ¬p
+
 sizedSearchFromˡ : ∀ {ℓ} {P : Vertex → Set ℓ} →
   (∀ b → Dec (P b)) → ∀ a → Dec (∃ λ b → P b × ∃ (SizedPathˡ a b))
 sizedSearchFromˡ P? a =
   case ∃? (SizedPathˡ≤-finite (size vertexFinite) a) (P? ∘ proj₁) of λ where
     (yes ((_ , _ , _ , p) , pb)) → yes (, pb , (, p))
     (no ¬p) → no λ where (_ , pb , _ , p) → ¬p ((, shortEnoughPath p) , pb)
+
+sizedSearchAcyclicFromˡ : ∀ {ℓ} {P : Vertex → Set ℓ} →
+  (∀ b → Dec (P b)) → ∀ a → Dec (∃ λ b → P b × ∃₂ λ n (p : SizedPathˡ a b n) → ¬ Repeats (trailˡ p))
+sizedSearchAcyclicFromˡ P? a =
+  case ∃? (SizedPathˡ≤-finite (size vertexFinite) a) (P? ∘ proj₁) of λ where
+    (yes ((_ , _ , _ , p) , pb)) →
+      let (x , x≤n , p′) , ¬r′ = acyclicPath p in
+        yes (, pb , (, (p′ , ¬r′)))
+    (no ¬p) → no λ where (_ , pb , _ , p , r) → ¬p ((, shortEnoughPath p) , pb)
 
 sizedSearchFromʳ : ∀ {ℓ} {P : Vertex → Set ℓ} →
   (∀ b → Dec (P b)) → ∀ a → Dec (∃ λ b → P b × ∃ (SizedPathʳ a b))

@@ -57,7 +57,7 @@ module _ {ℓ} {A : Set ℓ} where
   length≡breakLength (there e) = cong suc (length≡breakLength e)
 
   length≡segmentLength : ∀ {x n} {xs : Vec A n}
-    (e : x ∈ xs) → (e′ : x ∈ suffix e) →
+    (e : x ∈ xs) (e′ : x ∈ suffix e) →
     n ≡ suc (prefixLength e) + suffixLength e′ + prefixLength e′
   length≡segmentLength {n = n} e e′ =
     begin

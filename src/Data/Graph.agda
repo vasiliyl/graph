@@ -3,7 +3,7 @@ module Data.Graph where
 open import Data.List as List using (List; []; _∷_)
 open import Data.Nat hiding (_⊔_)
 open import Data.Product
-open import Data.Vec as Vec using (Vec; []; _∷_; head; tail; init; last)
+open import Data.Vec as Vec using (Vec; []; _∷_)
 open import Data.Vec.Properties
 open import Level as ℓ using (Level; _⊔_)
 open import Finite
