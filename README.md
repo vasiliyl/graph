@@ -1,5 +1,5 @@
 # Graph
-This is a library for working with finite graphs, including a brute force decision procedure for finding a path between two nodes in [`Graph.Path.Search`](src/Graph/Path/Search.agda).
+This is a library for working with finite graphs, including a brute force decision procedure for finding a path between two nodes in [`Data.Graph.Path.Search`](src/Data/Graph/Path/Search.agda).
 
 # How to build
 Building requires the following libraries in an Agda [`libraries` file](http://agda.readthedocs.io/en/v2.5.3/tools/package-system.html):
