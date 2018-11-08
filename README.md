@@ -1,4 +1,3 @@
-# Graph
 This is a library for working with finite graphs, including a brute force decision procedure for finding a path between two nodes in [`Data.Graph.Path.Search`](src/Data/Graph/Path/Search.agda).
 
 # How to build
