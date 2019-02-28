@@ -8,14 +8,11 @@ open import Data.Vec.Properties
 open import Level as ℓ using (Level; _⊔_)
 open import Finite
 open import Function
+open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 
 open IsFinite
-
-infix 3 _⊑[_]_
-_⊑[_]_ : ∀ {ℓ₁ ℓ₂ ℓ₃ ℓ₄} {A : Set ℓ₁} {B : Set ℓ₂} → (A → A → Set ℓ₃) → (A → B) → (B → B → Set ℓ₄) → Set _
-_↦_ ⊑[ f ] _↦′_ = ∀ {i j} → i ↦ j → f i ↦′ f j
 
 module Path {ℓᵥ ℓₑ} {V : Set ℓᵥ} (_↦_ : V → V → Set ℓₑ) where
   infixr 5 _∷ʳ_
@@ -94,7 +91,7 @@ module Path {ℓᵥ ℓₑ} {V : Set ℓᵥ} (_↦_ : V → V → Set ℓₑ) wh
 
 module Embed {ℓᵥ ℓᵥ′ ℓₑ ℓₑ′}
   {V : Set ℓᵥ} {V′ : Set ℓᵥ′} {_↦_ : V → V → Set ℓₑ} {_↦′_ : V′ → V′ → Set ℓₑ′} {f}
-  (r : _↦_ ⊑[ f ] _↦′_) where
+  (r : _↦_ =[ f ]⇒ _↦′_) where
 
   open Path
 
