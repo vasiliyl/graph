@@ -31,7 +31,7 @@ open IsFinite
 open RawMonad {ℓᵥ ℓ.⊔ ℓₑ} ListCat.monad
 
 nexts : ∀ {a b n} → SizedPathʳ a b n → List (∃ λ b → SizedPathʳ a b (suc n))
-nexts {a} {b} p = List.map (λ where (_ , e) → , e ∷ p) (elements (edgeFinite b))
+nexts {a} {b} p = List.map (λ where (_ , e) → -, e ∷ p) (elements (edgeFinite b))
 
 ∈-nexts : ∀ {a c n} →
   (pf : IsFinite (∃ λ b → SizedPathʳ a b n)) →
@@ -39,10 +39,10 @@ nexts {a} {b} p = List.map (λ where (_ , e) → , e ∷ p) (elements (edgeFinit
   (c , p) ∈ (elements pf >>= (nexts ∘ proj₂))
 ∈-nexts pf (e ∷ p) =
   to {ℓᵥ ℓ.⊔ ℓₑ} >>=-∈↔ ⟨$⟩
-    (, membership pf (, p) , to map-∈↔ ⟨$⟩ (, membership (edgeFinite _) (, e) , refl))
+    (-, membership pf (-, p) , to map-∈↔ ⟨$⟩ (-, membership (edgeFinite _) (-, e) , refl))
 
 SizedPathʳ-finite : ∀ n a → IsFinite (∃ λ b → SizedPathʳ a b n)
-SizedPathʳ-finite zero a = finite List.[ , [] ] λ where (_ , []) → here refl
+SizedPathʳ-finite zero a = finite List.[ -, [] ] λ where (_ , []) → here refl
 SizedPathʳ-finite (suc n) a =
   let pf = SizedPathʳ-finite n a in
     finite (elements pf >>= (nexts ∘ proj₂)) (∈-nexts pf ∘ proj₂)
@@ -75,7 +75,7 @@ membership (SizedPathˡ-finite n a) (b , p) =
     (inj₂ refl) → inj₂ refl
 
 SizedPathˡ≤-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ≤ a b n)
-SizedPathˡ≤-finite zero a = finite List.[ , , z≤n , [] ] λ where (_ , _ , z≤n , []) → here refl
+SizedPathˡ≤-finite zero a = finite List.[ -, -, z≤n , [] ] λ where (_ , _ , z≤n , []) → here refl
 SizedPathˡ≤-finite (suc n) a =
   let
     finite xs elem = SizedPathˡ≤-finite n a
@@ -90,11 +90,11 @@ SizedPathˡ≤-finite (suc n) a =
             to ++↔ ⟨$⟩
               inj₁
                 (to map-∈↔ ⟨$⟩
-                  (, (elem (b , m , le′ , p)) ,
+                  (-, (elem (b , m , le′ , p)) ,
                     cong (λ q → b , m , q , p) (≤-irrelevance le (≤-step le′))))
           (inj₂ refl) →
             to (++↔ {xs = List.map _ xs}) ⟨$⟩
               inj₂
                 (to map-∈↔ ⟨$⟩
-                  (, elem′ (, p) ,
+                  (-, elem′ (-, p) ,
                     cong (λ q → b , m , q , p) (≤-irrelevance le (s≤s ≤-refl))))

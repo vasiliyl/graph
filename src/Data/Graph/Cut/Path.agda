@@ -8,6 +8,8 @@ open import Data.Nat.Properties
 open import Data.Product as ×
 open import Data.Sum as ⊎
 open import Data.Vec hiding (_∷ʳ_)
+open import Data.Vec.Any using (Any; here; there)
+open import Data.Vec.Membership.Propositional
 open import Finite
 open import Finite.Pigeonhole
 open import Function
@@ -24,7 +26,7 @@ breakPath : ∀ {a b x l}
   (e : x ∈ trailˡ p) →
   SizedPathˡ a x (prefixLength e) × SizedPathˡ x b (suc (suffixLength e))
 breakPath [] ()
-breakPath (e ∷ p) here = [] , e ∷ p
+breakPath (e ∷ p) (here refl) = [] , e ∷ p
 breakPath (e ∷ p) (there d) =
   let q , r = breakPath p d in
     e ∷ q , r
@@ -47,7 +49,7 @@ suffixLength≡suffixLength-tail : ∀ {a b x n}
   (e′ : x ∈ tail (suffix e)) →
   suffixLength e′ ≡ suffixLength {xs = suffix e} (tail-⊆ e′)
 suffixLength≡suffixLength-tail [] () e′
-suffixLength≡suffixLength-tail (e ∷ p) here e′ = refl
+suffixLength≡suffixLength-tail (e ∷ p) (here refl) e′ = refl
 suffixLength≡suffixLength-tail (e ∷ p) (there i) e′ = suffixLength≡suffixLength-tail p i e′
 
 suffix≡suffixPath : ∀ {a b x l}
@@ -55,7 +57,7 @@ suffix≡suffixPath : ∀ {a b x l}
   (e : x ∈ trailˡ p) →
   suffix e ≡ trailˡ (suffixPath p e)
 suffix≡suffixPath [] ()
-suffix≡suffixPath (e ∷ p) here = refl
+suffix≡suffixPath (e ∷ p) (here refl) = refl
 suffix≡suffixPath (e ∷ p) (there i) = suffix≡suffixPath p i
 
 segmentPath : ∀ {a b x l}
@@ -78,7 +80,7 @@ segmentPath p e e′ =
       (e′ : x ∈ tail (suffix e)) →
       prefixLength (subst (_ ∈_) (suffix≡suffixPath p e) (tail-⊆ e′)) ≡ suc (prefixLength e′)
     prefixLengthLem [] () e′
-    prefixLengthLem (e ∷ p) here e′ = refl
+    prefixLengthLem (e ∷ p) (here refl) e′ = refl
     prefixLengthLem (e ∷ p) (there i) e′ = prefixLengthLem p i e′
 
     suffixLengthLem : ∀ {a b x l}
@@ -87,7 +89,7 @@ segmentPath p e e′ =
       (e′ : x ∈ tail (suffix e)) →
       suffixLength (subst (_ ∈_) (suffix≡suffixPath p e) (tail-⊆ e′)) ≡ suffixLength e′
     suffixLengthLem [] () e′
-    suffixLengthLem (e ∷ p) here e′ = refl
+    suffixLengthLem (e ∷ p) (here refl) e′ = refl
     suffixLengthLem (e ∷ p) (there i) e′′ = suffixLengthLem p i e′′
 
 unbreak-≤ : ∀ {a b x n}
@@ -118,7 +120,7 @@ cutPathLoop : ∀ {a b x n}
   (e : x ∈ trailˡ p)
   (e′ : x ∈ tail (suffix e)) →
   Pathˡ< a b n
-cutPathLoop {n = n} p e e′ = let u , v , w = segmentPath p e e′ in , unbreak-≤ p e e′ , u ++ˡ w
+cutPathLoop {n = n} p e e′ = let u , v , w = segmentPath p e e′ in -, unbreak-≤ p e e′ , u ++ˡ w
 
 cutRepeat : ∀ {a b n} →
   (p : SizedPathˡ a b n) → Repeats (trailˡ p) →
@@ -139,13 +141,13 @@ shortEnoughPath : ∀ {a b n}
 shortEnoughPath {n = n} p =
   case size vertexFinite <? n of λ where
     (yes m>v) → <-rec _ ind _ p m>v
-    (no m≯v) → , ≮⇒≥ m≯v , p
+    (no m≯v) → -, ≮⇒≥ m≯v , p
   where
     ind = λ x rec p gt →
       let m , le , q = shortenPath p gt in
         case size vertexFinite <? m of λ where
           (yes m>v) → rec _ le q m>v
-          (no m≯v) → , ≮⇒≥ m≯v , q
+          (no m≯v) → -, ≮⇒≥ m≯v , q
 
 acyclicPath : ∀ {a b n} →
   SizedPathˡ a b n →
@@ -153,7 +155,7 @@ acyclicPath : ∀ {a b n} →
 acyclicPath {a} {b} {n} p =
   case repeats? decEqVertex (trailˡ p) of λ where
     (yes r) → <-rec Ind ind _ p ≤-refl r
-    (no ¬r) → (, ≤-refl , p) , ¬r
+    (no ¬r) → (-, ≤-refl , p) , ¬r
   where
     Ind = λ x →
       (p : SizedPathˡ a b x) → x ≤ n → Repeats (trailˡ p) →
@@ -166,7 +168,7 @@ acyclicPath {a} {b} {n} p =
       in
         case repeats? decEqVertex (trailˡ p′) of λ where
           (yes r′) → rec _ y<x _ (≤-trans (<⇒≤ (unbreak-≤ p e e′)) x≤n) r′
-          (no ¬r′) → (, ≤-trans (<⇒≤ y<x) x≤n , p′) , ¬r′
+          (no ¬r′) → (-, ≤-trans (<⇒≤ y<x) x≤n , p′) , ¬r′
 
 minimalPath : ∀ {a b n} →
   SizedPathˡ a b n →

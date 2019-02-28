@@ -4,32 +4,37 @@ open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Product as ×
 open import Data.Vec
+open import Data.Vec.Any as Any using (Any; here; there)
+open import Data.Vec.Membership.Propositional
 open import Finite.Pigeonhole
 open import Function
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
 open ≡-Reasoning
 
+Vec< : ∀ {ℓ} → Set ℓ → ℕ → Set _
+Vec< A n = ∃ λ m → m < n × Vec A m
+
 module _ {ℓ} {A : Set ℓ} where
   loopStart : ∀ {n} {xs : Vec A n} → Repeats xs → ∃ λ x → x ∈ xs
-  loopStart (here e) = , here
+  loopStart (here e) = -, here refl
   loopStart (there rs) = ×.map _ there (loopStart rs)
 
   preLoop : ∀ {n} {xs : Vec A n} → Repeats xs → Vec< A n
-  preLoop {xs = x ∷ xs} (here e) = , s≤s z≤n , []
+  preLoop {xs = x ∷ xs} (here e) = -, s≤s z≤n , []
   preLoop {xs = x ∷ xs} (there rs) = ×.map _ (×.map s≤s (x ∷_)) (preLoop rs)
 
   prefixLength : ∀ {x l} {xs : Vec A l} → x ∈ xs → ℕ
-  prefixLength here = 0
+  prefixLength (here refl) = 0
   prefixLength (there e) = suc (prefixLength e)
 
   suffixLength : ∀ {x l} {xs : Vec A l} → x ∈ xs → ℕ
-  suffixLength {l = suc l} here = l
+  suffixLength {l = suc l} (here refl) = l
   suffixLength (there e) = suffixLength e
 
   breakVec : ∀ {x l} {xs : Vec A l}
     (e : x ∈ xs) → Vec A (suc (prefixLength e)) × Vec A (suc (suffixLength e))
-  breakVec {xs = x ∷ xs} here = [ x ] , x ∷ xs
+  breakVec {xs = x ∷ xs} (here refl) = [ x ] , x ∷ xs
   breakVec {xs = x ∷ xs} (there e) = ×.map (x ∷_) id (breakVec e)
 
   prefix : ∀ {x l} {xs : Vec A l} (e : x ∈ xs) → Vec A _
@@ -40,7 +45,7 @@ module _ {ℓ} {A : Set ℓ} where
 
   repeatElems : ∀ {n} {xs : Vec A n} →
     Repeats xs → ∃₂ λ x (e : x ∈ xs) → x ∈ tail (suffix e)
-  repeatElems (here r) = , here , r
+  repeatElems (here r) = -, here refl , r
   repeatElems (there rs) = ×.map _ (×.map there id) (repeatElems rs)
 
   segmentVec : ∀ {x l} {xs : Vec A l}
@@ -48,12 +53,12 @@ module _ {ℓ} {A : Set ℓ} where
     Vec A (suc (prefixLength e)) × Vec A (suc (prefixLength e′)) × Vec A (suc (suffixLength e′))
   segmentVec e e′ = proj₁ (breakVec e) , breakVec e′
 
-  tail-⊆ : ∀ {n} {xs : Vec A (suc n)} → tail xs ⊆V xs
+  tail-⊆ : ∀ {n} {xs : Vec A (suc n)} → tail xs ⊆ xs
   tail-⊆ {xs = x ∷ xs} = there
 
   length≡breakLength : ∀ {x n} {xs : Vec A n}
     (e : x ∈ xs) → n ≡ suc (prefixLength e) + suffixLength e
-  length≡breakLength here = refl
+  length≡breakLength (here refl) = refl
   length≡breakLength (there e) = cong suc (length≡breakLength e)
 
   length≡segmentLength : ∀ {x n} {xs : Vec A n}
@@ -80,5 +85,5 @@ module _ {ℓ} {A : Set ℓ} where
     (e : x ∈ xs)
     (e′ : x ∈ (tail (suffix e))) →
     0 < prefixLength {xs = suffix e} (tail-⊆ e′)
-  0<prefixLength-tail here e′ = s≤s z≤n
+  0<prefixLength-tail (here refl) e′ = s≤s z≤n
   0<prefixLength-tail (there e) e′ = 0<prefixLength-tail e e′
