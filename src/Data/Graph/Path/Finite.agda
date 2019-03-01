@@ -30,41 +30,30 @@ open Inverse using (to; from)
 open IsFinite
 open RawMonad {ℓᵥ ℓ.⊔ ℓₑ} ListCat.monad
 
-nexts : ∀ {a b n} → SizedPathʳ a b n → List (∃ λ b → SizedPathʳ a b (suc n))
+nexts : ∀ {a b n} → Pathʳ a b n → List (∃ λ b → Pathʳ a b (suc n))
 nexts {a} {b} p = List.map (λ where (_ , e) → -, e ∷ p) (elements (edgeFinite b))
 
 ∈-nexts : ∀ {a c n} →
-  (pf : IsFinite (∃ λ b → SizedPathʳ a b n)) →
-  (p : SizedPathʳ a c (suc n)) →
+  (pf : IsFinite (∃ λ b → Pathʳ a b n)) →
+  (p : Pathʳ a c (suc n)) →
   (c , p) ∈ (elements pf >>= (nexts ∘ proj₂))
 ∈-nexts pf (e ∷ p) =
   to {ℓᵥ ℓ.⊔ ℓₑ} >>=-∈↔ ⟨$⟩
     (-, membership pf (-, p) , to map-∈↔ ⟨$⟩ (-, membership (edgeFinite _) (-, e) , refl))
 
-SizedPathʳ-finite : ∀ n a → IsFinite (∃ λ b → SizedPathʳ a b n)
-SizedPathʳ-finite zero a = finite List.[ -, [] ] λ where (_ , []) → here refl
-SizedPathʳ-finite (suc n) a =
-  let pf = SizedPathʳ-finite n a in
+Pathʳ-finite : ∀ n a → IsFinite (∃ λ b → Pathʳ a b n)
+Pathʳ-finite zero a = finite List.[ -, [] ] λ where (_ , []) → here refl
+Pathʳ-finite (suc n) a =
+  let pf = Pathʳ-finite n a in
     finite (elements pf >>= (nexts ∘ proj₂)) (∈-nexts pf ∘ proj₂)
 
-id≗flipSizedPathʳ∘flipSizedPathˡ : ∀ {a b n} → id ≗ flipSizedPathʳ {a} {b} {n} ∘ flipSizedPathˡ
-id≗flipSizedPathʳ∘flipSizedPathˡ [] = refl
-id≗flipSizedPathʳ∘flipSizedPathˡ (e ∷ p) =
-  trans
-    (cong (e ∷_) (id≗flipSizedPathʳ∘flipSizedPathˡ p))
-    (step e (flipSizedPathˡ p))
-  where
-    step : ∀ {a b c n} (e : Edge a b) (p : SizedPathʳ b c n) → e ∷ flipSizedPathʳ p ≡ flipSizedPathʳ (e ∷ˡ p)
-    step e [] = refl
-    step e (e′ ∷ p) = cong (_∷ʳ e′) (step e p)
-
-SizedPathˡ-finite : ∀ n a → IsFinite (∃ λ b → SizedPathˡ a b n)
-elements (SizedPathˡ-finite n a) = List.map (×.map id flipSizedPathʳ) (elements (SizedPathʳ-finite n a))
-membership (SizedPathˡ-finite n a) (b , p) =
+Pathˡ-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ a b n)
+elements (Pathˡ-finite n a) = List.map (×.map id flipPathʳ) (elements (Pathʳ-finite n a))
+membership (Pathˡ-finite n a) (b , p) =
   to map-∈↔ ⟨$⟩
-    ((b , flipSizedPathˡ p) ,
-    membership (SizedPathʳ-finite n a) _ ,
-    cong (_,_ b) (id≗flipSizedPathʳ∘flipSizedPathˡ p))
+    ((b , flipPathˡ p) ,
+    membership (Pathʳ-finite n a) _ ,
+    cong (b ,_) (id≗flipPathʳ∘flipPathˡ p))
 
 ≤-top? : ∀ {x y} → x ≤ suc y → x ≤ y ⊎ x ≡ suc y
 ≤-top? z≤n = inj₁ z≤n
@@ -74,12 +63,12 @@ membership (SizedPathˡ-finite n a) (b , p) =
     (inj₁ le) → inj₁ (s≤s le)
     (inj₂ refl) → inj₂ refl
 
-SizedPathˡ≤-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ≤ a b n)
-SizedPathˡ≤-finite zero a = finite List.[ -, -, z≤n , [] ] λ where (_ , _ , z≤n , []) → here refl
-SizedPathˡ≤-finite (suc n) a =
+Pathˡ≤-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ≤ a b n)
+Pathˡ≤-finite zero a = finite List.[ -, -, z≤n , [] ] λ where (_ , _ , z≤n , []) → here refl
+Pathˡ≤-finite (suc n) a =
   let
-    finite xs elem = SizedPathˡ≤-finite n a
-    finite xs′ elem′ = SizedPathˡ-finite (suc n) a
+    finite xs elem = Pathˡ≤-finite n a
+    finite xs′ elem′ = Pathˡ-finite (suc n) a
   in
     finite
       (List.map (×.map _ (×.map _ (×.map ≤-step id))) xs ++
