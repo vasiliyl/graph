@@ -20,6 +20,7 @@ open import Function
 open import Function.Equality using (Π)
 open import Function.Equivalence using (Equivalence)
 open import Function.Inverse using (Inverse)
+open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 
@@ -30,30 +31,26 @@ open Inverse using (to; from)
 open IsFinite
 open RawMonad {ℓᵥ ℓ.⊔ ℓₑ} ListCat.monad
 
-nexts : ∀ {a b n} → Pathʳ a b n → List (∃ λ b → Pathʳ a b (suc n))
-nexts {a} {b} p = List.map (λ where (_ , e) → -, e ∷ p) (elements (edgeFinite b))
+nexts : ∀ {a b n} → Path a b n → List (∃ λ b → Path a b (suc n))
+nexts {a} {b} p = List.map (λ where (_ , e) → -, p ∷ʳ e) (elements (edgeFinite b))
 
 ∈-nexts : ∀ {a c n} →
-  (pf : IsFinite (∃ λ b → Pathʳ a b n)) →
-  (p : Pathʳ a c (suc n)) →
+  (pf : IsFinite (∃ λ b → Path a b n)) →
+  (p : Path a c (suc n)) →
   (c , p) ∈ (elements pf >>= (nexts ∘ proj₂))
-∈-nexts pf (e ∷ p) =
-  to {ℓᵥ ℓ.⊔ ℓₑ} >>=-∈↔ ⟨$⟩
-    (-, membership pf (-, p) , to map-∈↔ ⟨$⟩ (-, membership (edgeFinite _) (-, e) , refl))
+∈-nexts pf p =
+  case unsnoc p of λ where
+    (_ , p′ , e′ , refl) →
+      to >>=-∈↔ ⟨$⟩
+        (-,
+          membership pf (-, p′) ,
+          ∈-map⁺ (membership (edgeFinite _) (-, e′)))
 
-Pathʳ-finite : ∀ n a → IsFinite (∃ λ b → Pathʳ a b n)
-Pathʳ-finite zero a = finite List.[ -, [] ] λ where (_ , []) → here refl
-Pathʳ-finite (suc n) a =
-  let pf = Pathʳ-finite n a in
+Path-finite : ∀ n a → IsFinite (∃ λ b → Path a b n)
+Path-finite zero a = finite List.[ -, [] ] λ where (_ , []) → here refl
+Path-finite (suc n) a =
+  let pf = Path-finite n a in
     finite (elements pf >>= (nexts ∘ proj₂)) (∈-nexts pf ∘ proj₂)
-
-Pathˡ-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ a b n)
-elements (Pathˡ-finite n a) = List.map (×.map id flipPathʳ) (elements (Pathʳ-finite n a))
-membership (Pathˡ-finite n a) (b , p) =
-  to map-∈↔ ⟨$⟩
-    ((b , flipPathˡ p) ,
-    membership (Pathʳ-finite n a) _ ,
-    cong (b ,_) (id≗flipPathʳ∘flipPathˡ p))
 
 ≤-top? : ∀ {x y} → x ≤ suc y → x ≤ y ⊎ x ≡ suc y
 ≤-top? z≤n = inj₁ z≤n
@@ -63,16 +60,16 @@ membership (Pathˡ-finite n a) (b , p) =
     (inj₁ le) → inj₁ (s≤s le)
     (inj₂ refl) → inj₂ refl
 
-Pathˡ≤-finite : ∀ n a → IsFinite (∃ λ b → Pathˡ≤ a b n)
-Pathˡ≤-finite zero a = finite List.[ -, -, z≤n , [] ] λ where (_ , _ , z≤n , []) → here refl
-Pathˡ≤-finite (suc n) a =
+Path≤-finite : ∀ n a → IsFinite (∃ λ b → Path≤ a b n)
+Path≤-finite zero a = finite List.[ -, -, z≤n , [] ] λ where (_ , _ , z≤n , []) → here refl
+Path≤-finite (suc n) a =
   let
-    finite xs elem = Pathˡ≤-finite n a
-    finite xs′ elem′ = Pathˡ-finite (suc n) a
+    finite xs elem = Path≤-finite n a
+    finite xs′ elem′ = Path-finite (suc n) a
   in
     finite
-      (List.map (×.map _ (×.map _ (×.map ≤-step id))) xs ++
-        List.map (×.map id (_,_ (suc n) ∘ _,_ ≤-refl)) xs′)
+      (List.map (×.map₂ (×.map₂ (×.map₁ ≤-step))) xs List.++
+        List.map (×.map₂ (_,_ (suc n) ∘ _,_ ≤-refl)) xs′)
       λ where
         (b , m , le , p) → case ≤-top? le of λ where
           (inj₁ le′) →

@@ -7,7 +7,7 @@ open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Product as ×
 open import Data.Sum as ⊎
-open import Data.Vec hiding (_∷ʳ_)
+open import Data.Vec as Vec hiding (_∷ʳ_; _++_)
 open import Data.Vec.Any using (Any; here; there)
 open import Data.Vec.Membership.Propositional
 open import Finite
@@ -22,9 +22,9 @@ open IsFinite
 open ≡-Reasoning
 
 breakPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
-  (e : x ∈ trailˡ p) →
-  Pathˡ a x (prefixLength e) × Pathˡ x b (suc (suffixLength e))
+  (p : Path a b l)
+  (e : x ∈ trail p) →
+  Path a x (prefixLength e) × Path x b (suc (suffixLength e))
 breakPath [] ()
 breakPath (e ∷ p) (here refl) = [] , e ∷ p
 breakPath (e ∷ p) (there d) =
@@ -32,20 +32,20 @@ breakPath (e ∷ p) (there d) =
     e ∷ q , r
 
 prefixPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
-  (e : x ∈ trailˡ p) →
-  Pathˡ a x _
+  (p : Path a b l)
+  (e : x ∈ trail p) →
+  Path a x _
 prefixPath p = proj₁ ∘ breakPath p
 
 suffixPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
-  (e : x ∈ trailˡ p) →
-  Pathˡ x b _
+  (p : Path a b l)
+  (e : x ∈ trail p) →
+  Path x b _
 suffixPath p = proj₂ ∘ breakPath p
 
 suffixLength≡suffixLength-tail : ∀ {a b x n}
-  (p : Pathˡ a b n)
-  (e : x ∈ trailˡ p)
+  (p : Path a b n)
+  (e : x ∈ trail p)
   (e′ : x ∈ tail (suffix e)) →
   suffixLength e′ ≡ suffixLength {xs = suffix e} (tail-⊆ e′)
 suffixLength≡suffixLength-tail [] () e′
@@ -53,30 +53,30 @@ suffixLength≡suffixLength-tail (e ∷ p) (here refl) e′ = refl
 suffixLength≡suffixLength-tail (e ∷ p) (there i) e′ = suffixLength≡suffixLength-tail p i e′
 
 suffix≡suffixPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
-  (e : x ∈ trailˡ p) →
-  suffix e ≡ trailˡ (suffixPath p e)
+  (p : Path a b l)
+  (e : x ∈ trail p) →
+  suffix e ≡ trail (suffixPath p e)
 suffix≡suffixPath [] ()
 suffix≡suffixPath (e ∷ p) (here refl) = refl
 suffix≡suffixPath (e ∷ p) (there i) = suffix≡suffixPath p i
 
 segmentPath : ∀ {a b x l}
-  (p : Pathˡ a b l)
-  (e : x ∈ trailˡ p)
+  (p : Path a b l)
+  (e : x ∈ trail p)
   (e′ : x ∈ tail (suffix e)) →
-  Pathˡ a x (prefixLength e) × Pathˡ x x (suc (prefixLength e′)) × Pathˡ x b (suc (suffixLength e′))
+  Path a x (prefixLength e) × Path x x (suc (prefixLength e′)) × Path x b (suc (suffixLength e′))
 segmentPath p e e′ =
   let
     u , v = breakPath p e
     u′ , v′ = breakPath v (subst (_ ∈_) (suffix≡suffixPath p e) (tail-⊆ e′))
   in
     u ,
-    subst (Pathˡ _ _) (prefixLengthLem p _ _) u′ ,
-    subst (Pathˡ _ _) (cong suc (suffixLengthLem p _ _)) v′
+    subst (Path _ _) (prefixLengthLem p _ _) u′ ,
+    subst (Path _ _) (cong suc (suffixLengthLem p _ _)) v′
   where
     prefixLengthLem : ∀ {a b x l}
-      (p : Pathˡ a b l)
-      (e : x ∈ trailˡ p)
+      (p : Path a b l)
+      (e : x ∈ trail p)
       (e′ : x ∈ tail (suffix e)) →
       prefixLength (subst (_ ∈_) (suffix≡suffixPath p e) (tail-⊆ e′)) ≡ suc (prefixLength e′)
     prefixLengthLem [] () e′
@@ -84,8 +84,8 @@ segmentPath p e e′ =
     prefixLengthLem (e ∷ p) (there i) e′ = prefixLengthLem p i e′
 
     suffixLengthLem : ∀ {a b x l}
-      (p : Pathˡ a b l)
-      (e : x ∈ trailˡ p)
+      (p : Path a b l)
+      (e : x ∈ trail p)
       (e′ : x ∈ tail (suffix e)) →
       suffixLength (subst (_ ∈_) (suffix≡suffixPath p e) (tail-⊆ e′)) ≡ suffixLength e′
     suffixLengthLem [] () e′
@@ -93,8 +93,8 @@ segmentPath p e e′ =
     suffixLengthLem (e ∷ p) (there i) e′′ = suffixLengthLem p i e′′
 
 unbreak-≤ : ∀ {a b x n}
-  (p : Pathˡ a b n)
-  (e : x ∈ trailˡ p)
+  (p : Path a b n)
+  (e : x ∈ trail p)
   (e′ : x ∈ tail (suffix e)) →
   suc (prefixLength e) + suc (suffixLength e′) ≤ n
 unbreak-≤ {n = n} p e e′ = subst₂ _≤_
@@ -116,28 +116,28 @@ unbreak-≤ {n = n} p e e′ = subst₂ _≤_
   (s≤s (+-mono-≤ (≤-refl {x = prefixLength e + suffixLength e′}) (0<prefixLength-tail e e′)))
 
 cutPathLoop : ∀ {a b x n}
-  (p : Pathˡ a b n)
-  (e : x ∈ trailˡ p)
+  (p : Path a b n)
+  (e : x ∈ trail p)
   (e′ : x ∈ tail (suffix e)) →
-  Pathˡ< a b n
-cutPathLoop {n = n} p e e′ = let u , v , w = segmentPath p e e′ in -, unbreak-≤ p e e′ , u ++ˡ w
+  Path< a b n
+cutPathLoop {n = n} p e e′ = let u , v , w = segmentPath p e e′ in -, unbreak-≤ p e e′ , (u ++ w)
 
 cutRepeat : ∀ {a b n} →
-  (p : Pathˡ a b n) → Repeats (trailˡ p) →
-  Pathˡ< a b n
+  (p : Path a b n) → Repeats (trail p) →
+  Path< a b n
 cutRepeat p r = let _ , e , e′ = repeatElems r in cutPathLoop p e e′
 
 shortenPath : ∀ {a b n} →
-  Pathˡ a b n →
+  Path a b n →
   n > size vertexFinite →
-  Pathˡ< a b n
+  Path< a b n
 shortenPath p gt =
   uncurry (cutPathLoop p)
-    (proj₂ (repeatElems (finitePigeonhole vertexFinite (trailˡ p) gt)))
+    (proj₂ (repeatElems (finitePigeonhole vertexFinite (trail p) gt)))
 
 shortEnoughPath : ∀ {a b n}
-  (p : Pathˡ a b n) →
-  Pathˡ≤ a b (size vertexFinite)
+  (p : Path a b n) →
+  Path≤ a b (size vertexFinite)
 shortEnoughPath {n = n} p =
   case size vertexFinite <? n of λ where
     (yes m>v) → <-rec _ ind _ p m>v
@@ -150,29 +150,29 @@ shortEnoughPath {n = n} p =
           (no m≯v) → -, ≮⇒≥ m≯v , q
 
 acyclicPath : ∀ {a b n} →
-  Pathˡ a b n →
-  ∃ λ (p : Pathˡ≤ a b n) → ¬ Repeats (trailˡ (proj₂ (proj₂ p)))
+  Path a b n →
+  ∃ λ (p : Path≤ a b n) → ¬ Repeats (trail (proj₂ (proj₂ p)))
 acyclicPath {a} {b} {n} p =
-  case repeats? decEqVertex (trailˡ p) of λ where
+  case repeats? decEqVertex (trail p) of λ where
     (yes r) → <-rec Ind ind _ p ≤-refl r
     (no ¬r) → (-, ≤-refl , p) , ¬r
   where
     Ind = λ x →
-      (p : Pathˡ a b x) → x ≤ n → Repeats (trailˡ p) →
-      ∃ λ (p′ : Pathˡ≤ a b n) → ¬ Repeats (trailˡ (proj₂ (proj₂ p′)))
+      (p : Path a b x) → x ≤ n → Repeats (trail p) →
+      ∃ λ (p′ : Path≤ a b n) → ¬ Repeats (trail (proj₂ (proj₂ p′)))
 
     ind = λ x rec p x≤n r →
       let
         y , y<x , p′ = cutRepeat p r
         _ , e , e′ = repeatElems r
       in
-        case repeats? decEqVertex (trailˡ p′) of λ where
+        case repeats? decEqVertex (trail p′) of λ where
           (yes r′) → rec _ y<x _ (≤-trans (<⇒≤ (unbreak-≤ p e e′)) x≤n) r′
           (no ¬r′) → (-, ≤-trans (<⇒≤ y<x) x≤n , p′) , ¬r′
 
 minimalPath : ∀ {a b n} →
-  Pathˡ a b n →
-  ∃ λ (p : Pathˡ≤ a b (size vertexFinite)) → ¬ Repeats (trailˡ (proj₂ (proj₂ p)))
+  Path a b n →
+  ∃ λ (p : Path≤ a b (size vertexFinite)) → ¬ Repeats (trail (proj₂ (proj₂ p)))
 minimalPath p =
   let
     x , x≤max , p′ = shortEnoughPath p
