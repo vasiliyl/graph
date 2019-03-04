@@ -10,7 +10,8 @@ open import Finite
 open import Function
 open import Relation.Binary
 open import Relation.Binary.Construct.Closure.ReflexiveTransitive
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.HeterogeneousEquality as ≅
+open import Relation.Binary.PropositionalEquality as ≡
 open import Relation.Nullary
 
 open IsFinite
@@ -56,6 +57,28 @@ module Path {ℓᵥ ℓₑ} {V : Set ℓᵥ} (_↦_ : V → V → Set ℓₑ) wh
   fromStar : ∀ {a b} (p : Star _↦_ a b) → Path a b (starLength p)
   fromStar ε = []
   fromStar (e ◅ p) = e ∷ fromStar p
+
+  toStar-fromStar : ∀ {a b} (p : Star _↦_ a b) → p ≡ toStar (fromStar p)
+  toStar-fromStar ε = refl
+  toStar-fromStar (e ◅ p) = ≡.cong (e ◅_) (toStar-fromStar p)
+
+  starTrail : ∀ {a b} (p : Star _↦_ a b) → Vec V (starLength p)
+  starTrail ε = []
+  starTrail {a} (e ◅ p) = a ∷ starTrail p
+
+  trail-fromStar : ∀ {a b} (p : Star _↦_ a b) → starTrail p ≡ trail (fromStar p)
+  trail-fromStar ε = refl
+  trail-fromStar (e ◅ p) = ≡.cong (_ ∷_) (trail-fromStar p)
+
+  starLength-toStar : ∀ {a b n} (p : Path a b n) → n ≡ starLength (toStar p)
+  starLength-toStar [] = refl
+  starLength-toStar (e ∷ p) = ≡.cong suc (starLength-toStar p)
+
+  starTrail-toStar : ∀ {a b n} (p : Path a b n) → trail p ≅ starTrail (toStar p)
+  starTrail-toStar [] = refl
+  starTrail-toStar {a} {b} {suc n} (e ∷ p) =
+    ≅.icong (λ i → Vec V i) {B = λ {i} _ → Vec V (suc i)}
+      (starLength-toStar p) (λ as → a ∷ as) (starTrail-toStar p)
 
 module Embed {ℓᵥ ℓᵥ′ ℓₑ ℓₑ′}
   {V : Set ℓᵥ} {V′ : Set ℓᵥ′} {_↦_ : V → V → Set ℓₑ} {_↦′_ : V′ → V′ → Set ℓₑ′} {f}

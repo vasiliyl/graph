@@ -5,9 +5,13 @@ module Data.Graph.Path.Search {ℓᵥ ℓₑ} (g : FiniteGraph ℓᵥ ℓₑ) wh
 open import Data.Graph.Cut.Path g
 open import Data.Graph.Path.Finite g
 open import Data.Product as Σ
+open import Data.Sum as ⊎
+open import Data.Vec as Vec
 open import Finite
 open import Finite.Pigeonhole
 open import Function
+open import Level
+open import Relation.Binary
 open import Relation.Binary.Construct.Closure.ReflexiveTransitive
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary hiding (module Dec)
@@ -48,9 +52,64 @@ searchFrom : ∀ {ℓ} {P : Vertex → Set ℓ} →
   ∀ a → Dec (∃ λ b → P b × Star Edge a b)
 searchFrom P? a =
   Dec.map′
-    (map₂ (map₂ (toStar ∘ proj₂)))
-    (map₂ (map₂ (-,_ ∘ fromStar)))
+    (Σ.map₂ (Σ.map₂ (toStar ∘ proj₂)))
+    (Σ.map₂ (Σ.map₂ (-,_ ∘ fromStar)))
     (pathSearchFrom P? a)
 
 searchBetween : ∀ a b → Dec (Star Edge a b)
 searchBetween a b = Dec.map′ (toStar ∘ proj₂) (-,_ ∘ fromStar) (pathSearchBetween a b)
+
+module _
+  {ℓ ℓ≈ ℓ<}
+  {P : Vertex → Set ℓ} (P? : ∀ a → Dec (P a))
+  {_≈_ : ∀ {a} → Rel (∃ (Star Edge a)) ℓ≈}
+  {_<_ : ∀ {a} → Rel (∃ (Star Edge a)) ℓ<}
+  (<-po : ∀ {a} → IsDecStrictPartialOrder (_≈_ {a}) _<_)
+  where
+
+  record MaximalPath a : Set (ℓ ⊔ ℓᵥ ⊔ ℓₑ ⊔ ℓ<) where
+    field
+      destination : Vertex
+      predicate : P destination
+      path : Star Edge a destination
+      acyclic : Acyclic (starTrail path)
+      isMax : ∀
+        {b} (p : Star Edge a b) (pb : P b) → Acyclic (starTrail p) →
+        ¬ ((-, path) < (-, p))
+
+  searchMaximalFrom : ∀ a → Dec (MaximalPath a)
+  searchMaximalFrom a =
+    case max of λ where
+      (inj₁ ¬p) →
+        no λ mp →
+          let open MaximalPath mp in
+            ¬p ((-, path , fromWitness acyclic) , fromWitness predicate)
+
+      (inj₂ (((b , p , acp) , pb) , isMax)) →
+        yes record
+          { destination = b
+          ; predicate = toWitness pb
+          ; path = p
+          ; acyclic = toWitness acp
+          ; isMax = λ q pb acq → isMax ((-, q , fromWitness acq) , fromWitness pb)
+          }
+    where
+      module DPO = IsDecStrictPartialOrder <-po
+
+      _<′_ : Rel (∃ λ (p : ∃ (AcyclicStar a)) → True (P? (proj₁ p))) _
+      _<′_ = _<_ on λ where ((b , p , acp) , pb) → b , p
+
+      open Ordered (filter (AcyclicStar-finite a) (P? ∘ proj₁)) {_<_ = _<′_} record
+        { isStrictPartialOrder = record
+          { isEquivalence = record
+            { refl = IsEquivalence.refl DPO.isEquivalence
+            ; sym = IsEquivalence.sym DPO.isEquivalence
+            ; trans = IsEquivalence.trans DPO.isEquivalence
+            }
+          ; irrefl = DPO.irrefl
+          ; trans = DPO.trans
+          ; <-resp-≈ = proj₁ DPO.<-resp-≈ , proj₂ DPO.<-resp-≈
+          }
+        ; _≟_ = λ _ _ → _ DPO.≟ _
+        ; _<?_ = λ _ _ → _ DPO.<? _
+        }
