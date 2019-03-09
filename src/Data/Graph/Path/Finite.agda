@@ -4,7 +4,7 @@ module Data.Graph.Path.Finite {ℓᵥ ℓₑ} (g : FiniteGraph ℓᵥ ℓₑ) wh
 
 open import Category.Monad
 open import Data.Bool as Bool
-open import Data.Graph.Cut.Path g
+open import Data.Graph.Path.Cut g hiding (_∈_)
 open import Data.List as List hiding (_∷ʳ_)
 open import Data.List.Any as Any
 open import Data.List.Any.Properties
@@ -19,7 +19,6 @@ open import Data.Sum as ⊎
 open import Data.Vec as Vec using (Vec; []; _∷_)
 import Level as ℓ
 open import Finite
-open import Finite.Pigeonhole
 open import Function
 open import Function.Equality using (Π)
 open import Function.Equivalence using (Equivalence)
@@ -122,17 +121,7 @@ Path≤-finite (suc n) a =
                   (-, elem′ (-, p) ,
                     ≡.cong (λ q → b , m , q , p) (≤-irrelevance le (s≤s ≤-refl))))
 
-acyclic-length-≤ : ∀ {a b n} (p : Path a b n) → Acyclic (trail p) → n ≤ size vertexFinite
-acyclic-length-≤ {n = n} p acp =
-  case n ≤? size vertexFinite of λ where
-    (yes le) → le
-    (no ¬le) → contradiction (finitePigeonhole vertexFinite (trail p) (≰⇒> ¬le)) acp
-
-AcyclicPath-finite : ∀
-  a →
-  IsFinite
-    (∃₂ λ b n → ∃ λ (p : Path a b n) →
-      True (acyclic? decEqVertex (trail p)))
+AcyclicPath-finite : ∀ a → IsFinite (∃₂ λ b n → ∃ λ (p : Path a b n) → True (acyclic? p))
 AcyclicPath-finite a =
   via-left-inverse (IsFinite.filter (Path≤-finite (size vertexFinite) a) _) $
     leftInverse
@@ -141,7 +130,7 @@ AcyclicPath-finite a =
       λ where _ → refl
 
 AcyclicStar : Vertex → Vertex → Set _
-AcyclicStar a b = ∃ λ (p : Star Edge a b) → True (acyclic? decEqVertex (starTrail p))
+AcyclicStar a b = ∃ λ (p : Star Edge a b) → True (acyclic? (fromStar p))
 
 AcyclicStar-finite : ∀ a → IsFinite (∃ (AcyclicStar a))
 AcyclicStar-finite a =
@@ -149,13 +138,13 @@ AcyclicStar-finite a =
     leftInverse
       (λ where
         (b , p , acp) →
-          b , starLength p , fromStar p ,
-            ≡.subst (True ∘ acyclic? decEqVertex) (trail-fromStar p) acp)
+          b , starLength p , fromStar p , acp)
       (λ where
         (b , n , p , acp) →
           b , toStar p ,
-            isubst (Vec Vertex) (True ∘ acyclic? decEqVertex)
-              (starLength-toStar p) (starTrail-toStar p) acp)
+            isubst (Path a b) (True ∘ acyclic?)
+              (starLength-toStar p) (fromStar-toStar p)
+              acp)
       (λ where
         (b , p , acp) →
           ≡.cong (b ,_) $

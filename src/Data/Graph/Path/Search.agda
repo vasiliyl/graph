@@ -2,13 +2,12 @@ open import Data.Graph
 
 module Data.Graph.Path.Search {ℓᵥ ℓₑ} (g : FiniteGraph ℓᵥ ℓₑ) where
 
-open import Data.Graph.Cut.Path g
+open import Data.Graph.Path.Cut g
 open import Data.Graph.Path.Finite g
 open import Data.Product as Σ
 open import Data.Sum as ⊎
 open import Data.Vec as Vec
 open import Finite
-open import Finite.Pigeonhole
 open import Function
 open import Level
 open import Relation.Binary
@@ -30,10 +29,7 @@ pathSearchFrom P? a =
 
 pathSearchAcyclicFrom : ∀ {ℓ} {P : Vertex → Set ℓ} →
   (∀ b → Dec (P b)) → ∀ a →
-  Dec (∃ λ b →
-    P b ×
-      ∃₂ λ n (p : Path a b n) →
-        ¬ Repeats (trail p))
+  Dec (∃ λ b → P b × ∃₂ λ n (p : Path a b n) → Acyclic p)
 pathSearchAcyclicFrom P? a =
   case ∃? (Path≤-finite (size vertexFinite) a) (P? ∘ proj₁) of λ where
     (yes ((_ , _ , _ , p) , pb)) →
@@ -72,9 +68,9 @@ module _
       destination : Vertex
       predicate : P destination
       path : Star Edge a destination
-      acyclic : Acyclic (starTrail path)
+      acyclic : Acyclic (fromStar path)
       isMax : ∀
-        {b} (p : Star Edge a b) (pb : P b) → Acyclic (starTrail p) →
+        {b} (p : Star Edge a b) (pb : P b) → Acyclic (fromStar p) →
         ¬ ((-, path) < (-, p))
 
   searchMaximalFrom : ∀ a → Dec (MaximalPath a)
@@ -96,10 +92,11 @@ module _
     where
       module DPO = IsDecStrictPartialOrder <-po
 
-      _<′_ : Rel (∃ λ (p : ∃ (AcyclicStar a)) → True (P? (proj₁ p))) _
+      _≈′_ = _≈_ on λ where ((b , p , acp) , pb) → b , p
       _<′_ = _<_ on λ where ((b , p , acp) , pb) → b , p
 
-      open Ordered (filter (AcyclicStar-finite a) (P? ∘ proj₁)) {_<_ = _<′_} record
+      <′-IsDecStrictPartialOrder : IsDecStrictPartialOrder _≈′_ _<′_
+      <′-IsDecStrictPartialOrder = record
         { isStrictPartialOrder = record
           { isEquivalence = record
             { refl = IsEquivalence.refl DPO.isEquivalence
@@ -113,3 +110,7 @@ module _
         ; _≟_ = λ _ _ → _ DPO.≟ _
         ; _<?_ = λ _ _ → _ DPO.<? _
         }
+
+      acyclicPaths = filter (AcyclicStar-finite a) (P? ∘ proj₁)
+
+      open Ordered acyclicPaths <′-IsDecStrictPartialOrder

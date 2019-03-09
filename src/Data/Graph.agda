@@ -7,6 +7,7 @@ open import Data.Vec as Vec using (Vec; []; _∷_)
 open import Data.Vec.Properties
 open import Level as ℓ using (Level; _⊔_)
 open import Finite
+open import Finite.Pigeonhole
 open import Function
 open import Relation.Binary
 open import Relation.Binary.Construct.Closure.ReflexiveTransitive
@@ -62,6 +63,18 @@ module Path {ℓᵥ ℓₑ} {V : Set ℓᵥ} (_↦_ : V → V → Set ℓₑ) wh
   toStar-fromStar ε = refl
   toStar-fromStar (e ◅ p) = ≡.cong (e ◅_) (toStar-fromStar p)
 
+  starLength-toStar : ∀ {a b n} (p : Path a b n) → n ≡ starLength (toStar p)
+  starLength-toStar [] = refl
+  starLength-toStar (e ∷ p) = ≡.cong suc (starLength-toStar p)
+
+  fromStar-toStar : ∀ {a b n} (p : Path a b n) → p ≅ fromStar (toStar p)
+  fromStar-toStar [] = refl
+  fromStar-toStar (e ∷ p) =
+    ≅.icong (Path _ _) {B = λ {x} _ → Path _ _ (suc x)}
+      (starLength-toStar p)
+      (e ∷_)
+      (fromStar-toStar p)
+
   starTrail : ∀ {a b} (p : Star _↦_ a b) → Vec V (starLength p)
   starTrail ε = []
   starTrail {a} (e ◅ p) = a ∷ starTrail p
@@ -69,10 +82,6 @@ module Path {ℓᵥ ℓₑ} {V : Set ℓᵥ} (_↦_ : V → V → Set ℓₑ) wh
   trail-fromStar : ∀ {a b} (p : Star _↦_ a b) → starTrail p ≡ trail (fromStar p)
   trail-fromStar ε = refl
   trail-fromStar (e ◅ p) = ≡.cong (_ ∷_) (trail-fromStar p)
-
-  starLength-toStar : ∀ {a b n} (p : Path a b n) → n ≡ starLength (toStar p)
-  starLength-toStar [] = refl
-  starLength-toStar (e ∷ p) = ≡.cong suc (starLength-toStar p)
 
   starTrail-toStar : ∀ {a b n} (p : Path a b n) → trail p ≅ starTrail (toStar p)
   starTrail-toStar [] = refl
