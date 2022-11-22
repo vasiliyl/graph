@@ -5,7 +5,7 @@ module Data.Graph.Path.Cut {ℓᵥ ℓₑ} (g : FiniteGraph ℓᵥ ℓₑ) where
 open import Data.Fin as Fin using (Fin; zero; suc)
 open import Data.Fin.Properties as Fin-Props using (pigeonhole)
 open import Data.List as List using (List; []; _∷_)
-open import Data.List.Any as Any using (Any; here; there)
+open import Data.List.Relation.Unary.Any as Any using (Any; here; there)
 open import Data.List.Membership.Propositional as ∈L renaming (_∈_ to _∈L_)
 open import Data.Nat as ℕ
 open import Data.Nat.Properties as ℕ-Props
@@ -14,11 +14,11 @@ open import Data.Sum as ⊎
 open import Finite
 import Finite.Pigeonhole
 open import Function
-open import Induction.Nat
+open import Data.Nat.Induction
 open import Induction.WellFounded
 import Level as ℓ
 open import Relation.Binary.PropositionalEquality
-open import Relation.Binary.PreorderReasoning ≤-preorder
+open import Relation.Binary.Reasoning.Preorder ≤-preorder
 open import Relation.Nullary hiding (module Dec)
 open import Relation.Nullary.Decidable as Dec
 open import Relation.Nullary.Negation
@@ -128,19 +128,34 @@ cutLoop< : ∀ {a b n} {p : Path a b n} → Repeats p → Path< a b n
 cutLoop< r = case segment r of λ where (_◄_◄_ {m = m} p₁ p₂ p₃) → -, lengthLem m , p₁ ++ p₃
   where
     lengthLem : ∀ x {y z} → suc (x + z) ≤ x + suc y + z
-    lengthLem zero = s≤s (n≤m+n _ _)
+    lengthLem zero = s≤s (m≤n+m _ _)
     lengthLem (suc x) = s≤s (lengthLem x)
 
-indicesLoop : ∀ {a b n i j} {p : Path a b n} → i ≢ j → lookup p i ≡ lookup p j → Repeats p
-indicesLoop {i = zero} {zero} {e ∷ p} z≢z eq = contradiction refl z≢z
+indicesLoop : ∀ {a b n i j} {p : Path a b n} → i Fin.< j → lookup p i ≡ lookup p j → Repeats p
+indicesLoop {i = zero} {zero} {e ∷ p} i<j eq = contradiction i<j λ ()
 indicesLoop {i = zero} {suc j} {e ∷ p} _ refl = here (∈-lookup j)
 indicesLoop {i = suc i} {zero} {e ∷ p} _ refl = here (∈-lookup i)
-indicesLoop {i = suc i} {suc j} {e ∷ p} si≢sj eq = there (indicesLoop (si≢sj ∘ cong suc) eq)
+indicesLoop {i = suc i} {suc j} {e ∷ p} si<sj eq = there (indicesLoop (<-pred si<sj) eq)
+
+-- The lemma index-injective transforms a proof of equality between two indices in the
+-- list of all vertices into a proof of equality between the vertices at those indices
+
+index-injective
+  : ∀ {ℓ}
+  → {V : Set ℓ}
+  → {v₁ v₂ : V}
+  → {vs : List V}
+  → (v₁∈vs : v₁ ∈L vs)
+  → (v₂∈vs : v₂ ∈L vs)
+  → Any.index v₁∈vs ≡ Any.index v₂∈vs
+  → v₁ ≡ v₂
+index-injective (here refl) (here refl) refl = refl
+index-injective (there v₁∈vs) (there v₂∈vs) ix = index-injective v₁∈vs v₂∈vs (Fin-Props.suc-injective ix)
 
 findLoop : ∀ {a b n} (p : Path a b n) → n > size vertexFinite → Repeats p
 findLoop p gt =
-  let i , j , i≢j , eq = pigeonhole gt (finiteIndex p) in
-    indicesLoop i≢j (indexOf-injective vertexFinite eq)
+  let i , j , i<j , eq = pigeonhole gt (finiteIndex p) in
+    indicesLoop i<j (index-injective _ _ eq)
 
 acyclic-length-≤ : ∀ {a b n} (p : Path a b n) → Acyclic p → n ≤ size vertexFinite
 acyclic-length-≤ {n = n} p ¬r =

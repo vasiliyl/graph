@@ -2,15 +2,15 @@ open import Data.Graph
 
 module Data.Graph.Path.Finite {ℓᵥ ℓₑ} (g : FiniteGraph ℓᵥ ℓₑ) where
 
-open import Category.Monad
-open import Data.Bool as Bool
+open import Effect.Monad
+open import Data.Bool as Bool using ()
 open import Data.Graph.Path.Cut g hiding (_∈_)
-open import Data.List as List hiding (_∷ʳ_)
-open import Data.List.Any as Any
-open import Data.List.Any.Properties
+open import Data.List as List hiding (_∷ʳ_; unsnoc)
+open import Data.List.Relation.Unary.Any as Any
+open import Data.List.Relation.Unary.Any.Properties
 open import Data.List.Membership.Propositional
 open import Data.List.Membership.Propositional.Properties hiding (finite)
-open import Data.List.Categorical as ListCat
+open import Data.List.Effectful as ListCat
 open import Data.Nat using (ℕ; zero; suc; _≤_; z≤n; s≤s)
 open import Data.Nat.Properties
 open import Data.Product as Σ
@@ -21,8 +21,8 @@ import Level as ℓ
 open import Finite
 open import Function
 open import Function.Equality using (Π)
-open import Function.Equivalence using (Equivalence)
-open import Function.Inverse using (Inverse)
+-- open import Function.Equivalence using (Equivalence)
+-- open import Function.Inverse using (Inverse)
 open import Function.LeftInverse using (LeftInverse; leftInverse)
 open import Relation.Binary
 open import Relation.Binary.Construct.Closure.ReflexiveTransitive hiding (_>>=_)
@@ -68,7 +68,7 @@ True-unique-≅ A? B? () y | no ¬a | _
 ∃-≅ refl refl = refl
 
 nexts : ∀ {a b n} → Path a b n → List (∃ λ b → Path a b (suc n))
-nexts {a} {b} p = List.map (λ where (_ , e) → -, p ∷ʳ e) (elements (edgeFinite b))
+nexts {a} {b} p = List.map (λ where (_ , e) → -, p ∷ʳ e) (elements (edgeFinite {b}))
 
 ∈-nexts : ∀ {a c n} →
   (pf : IsFinite (∃ λ b → Path a b n)) →
@@ -113,13 +113,13 @@ Path≤-finite (suc n) a =
               inj₁
                 (to map-∈↔ ⟨$⟩
                   (-, (elem (b , m , le′ , p)) ,
-                    ≡.cong (λ q → b , m , q , p) (≤-irrelevance le (≤-step le′))))
+                    ≡.cong (λ q → b , m , q , p) (≤-irrelevant le (≤-step le′))))
           (inj₂ refl) →
             to (++↔ {xs = List.map _ xs}) ⟨$⟩
               inj₂
                 (to map-∈↔ ⟨$⟩
                   (-, elem′ (-, p) ,
-                    ≡.cong (λ q → b , m , q , p) (≤-irrelevance le (s≤s ≤-refl))))
+                    ≡.cong (λ q → b , m , q , p) (≤-irrelevant le (s≤s ≤-refl))))
 
 AcyclicPath-finite : ∀ a → IsFinite (∃₂ λ b n → ∃ λ (p : Path a b n) → True (acyclic? p))
 AcyclicPath-finite a =
